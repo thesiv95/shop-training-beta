@@ -1,15 +1,21 @@
-const dotenv = require('dotenv');
-dotenv.config();
+// System vars
+require('dotenv').config();
+// DB initialization
+require('./models/models');
+
+const path = require('path');
 const express = require('express');
+const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const sequelize = require('./db');
-const models = require('./models/models');
 const router = require('./routes/index');
 const errorHandler = require('./middlewares/ErrorHandlingMiddleware');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.resolve(__dirname, 'static'))); // devices images
+app.use(fileUpload());
 app.use(router);
 
 const PORT = process.env.PORT || 5000;
