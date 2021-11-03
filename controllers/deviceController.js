@@ -1,18 +1,13 @@
 const path = require('path');
 const { nanoid } = require('nanoid');
 const ApiError = require("../errors/ApiError");
-const { Device } = require("../models/models");
+const { Device, DeviceInfo } = require("../models/models");
 
 class DeviceController {
 
     async addDevice(req, res, next) {
         try {
-            const {
-                name,
-                price,
-                brandId,
-                typeId
-            } = req.body;
+            const { name, price, brandId, typeId, info } = req.body;
 
             // Img upload
             const { img } = req.files;
@@ -26,6 +21,20 @@ class DeviceController {
                 typeId,
                 img: fileName,
             });
+
+            // Parse device info from form-data
+            if (info) {
+                info = JSON.parse(info);
+                info.forEach(i => { // no need to use await - no sense to block a thread
+                    DeviceInfo.create({
+                        title: i.title,
+                        description: i.description,
+                        deviceId: device.id,
+                    })
+                })
+            }
+
+
             return res.status(201).json(device);
         } catch (error) {
             return next(ApiError.internal(error));
@@ -67,7 +76,10 @@ class DeviceController {
     async getOneDevice(req, res, next) {
         try {
             const { id } = req.params;
-            const device = await Device.findByPk(id);
+            const device = await Device.findOne({
+                where: { id },
+                include: [{ model: DeviceInfo, as: 'info' }] // join
+            });
             return res.status(200).json({ device });
         } catch (error) {
             return next(ApiError.internal(error));
